@@ -45,6 +45,7 @@ var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
+var breakPoints = flag.String("breakPoints", "", "Breakpoints for images that they are only allowed specifig height")
 var cache tieredCache
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
@@ -65,6 +66,9 @@ func main() {
 	}
 	if *referrers != "" {
 		p.Referrers = strings.Split(*referrers, ",")
+	}
+	if *breakPoints != "" {
+		p.BreakPoints = strings.Split(*breakPoints, ",")
 	}
 	if *signatureKey != "" {
 		key := []byte(*signatureKey)

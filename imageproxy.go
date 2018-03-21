@@ -28,6 +28,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,6 +49,11 @@ type Proxy struct {
 	// proxy come from a referring host. An empty list means all
 	// hosts are allowed.
 	Referrers []string
+
+	// Breakpoints, when given, requires that requests to the image
+	// proxy come with height or width. An empty list means all
+	// height or width are allowed.
+	BreakPoints []string
 
 	// DefaultBaseURL is the URL that relative remote URLs are resolved in
 	// reference to.  If nil, all remote URLs specified in requests must be
@@ -122,6 +128,38 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.ServeHTTP(w, r)
 }
 
+func checkbreackpoints(w http.ResponseWriter, r *http.Request, req *Request, p *Proxy) bool {
+	a := strconv.FormatFloat(req.Options.Width, 'f', -1, 64)
+	if req.Options.Height != 0 {
+		if !contains(p.BreakPoints, a) {
+			msg := fmt.Sprintf("invalid request")
+			log.Print(msg)
+			http.Error(w, msg, http.StatusBadRequest)
+			return false
+		}
+	}
+
+	b := strconv.FormatFloat(req.Options.Height, 'f', -1, 64)
+	if req.Options.Width != 0 {
+		if !contains(p.BreakPoints, b) {
+			msg := fmt.Sprintf("invalid request")
+			log.Print(msg)
+			http.Error(w, msg, http.StatusBadRequest)
+			return false
+		}
+	}
+	return true
+}
+
+func contains(arr []string, str string) bool {
+	for _, a := range arr {
+		if a == str {
+			return true
+		}
+	}
+	return false
+}
+
 // serveImage handles incoming requests for proxied images.
 func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r, p.DefaultBaseURL)
@@ -130,6 +168,13 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		log.Print(msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
+	}
+
+	if len(p.BreakPoints) > 0 {
+		status := checkbreackpoints(w, r, req, p)
+		if !status {
+			return
+		}
 	}
 
 	// assign static settings from proxy to req.Options

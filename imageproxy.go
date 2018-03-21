@@ -139,7 +139,7 @@ func checkbreackpoints(w http.ResponseWriter, r *http.Request, req *Request, p *
 		}
 	}
 
-	b := strconv.FormatFloat(req.Options.Height, 'f', -1, 64)
+	b := strconv.FormatFloat(req.Options.Width, 'f', -1, 64)
 	if req.Options.Width != 0 {
 		if !contains(p.BreakPoints, b) {
 			msg := fmt.Sprintf("invalid request")
